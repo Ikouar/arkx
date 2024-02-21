@@ -1,0 +1,55 @@
+// // controllers/postController.js
+
+// const PostModel = require('../models/postModel');
+
+// const postController = {
+//   createPost: (req, res, next) => {
+//     const { title, content } = req.body;
+//     if (!title || !content) {
+//       return res.status(400).json({ error: 'Title and content are required' });
+//     }
+//     // Sanitize input to prevent XSS attacks
+//     const sanitizedTitle = sanitizeInput(title);
+//     const sanitizedContent = sanitizeInput(content);
+//     const newPost = { title: sanitizedTitle, content: sanitizedContent };
+//     PostModel.createPost(newPost)
+//       .then(() => {
+//         res.status(201).json({ message: 'Post created successfully', post: newPost });
+//       })
+//       .catch((err) => next(err));
+//   }
+// };
+
+// // Function to sanitize input (prevent XSS)
+// function sanitizeInput(input) {
+//   // Implement your sanitization logic here
+//   return input;
+// }
+
+// module.exports = postController;
+
+
+
+
+
+
+// controllers/postController.js
+
+const PostModel = require('../models/postModel');
+
+const postController = {
+  getAllPosts: async (req, res, next) => {
+    try {
+      const posts = await PostModel.getAllPosts();
+      res.status(200).json(posts);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  createPost: async (req, res, next) => {
+    // Your createPost logic here
+  }
+};
+
+module.exports = postController;

@@ -1,0 +1,24 @@
+// app.js
+
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+const bodyParser = require('body-parser');
+
+const postRoutes = require('./routes/postRoutes');
+const errorHandlerMiddleware = require('./middlewares/errorHandlerMiddleware');
+const loggingMiddleware = require('./middlewares/loggingMiddleware');
+
+// Middleware
+app.use(bodyParser.json());
+app.use(loggingMiddleware);
+
+// Routes
+app.use('/posts', postRoutes);
+
+// Error handling middleware
+app.use(errorHandlerMiddleware);
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

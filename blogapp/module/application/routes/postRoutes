@@ -1,0 +1,27 @@
+// // routes/postRoutes.js
+
+// const express = require('express');
+// const router = express.Router();
+// const postController = require('../controllers/postController');
+
+// // Routes
+// router.post('/', postController.createPost);
+
+// module.exports = router;
+
+
+
+
+
+// routes/postRoutes.js
+
+const express = require('express');
+const router = express.Router();
+const postController = require('../controllers/postController');
+
+// Routes
+router.get('/', postController.getAllPosts); // Define a route to handle GET requests to /posts
+
+router.post('/', postController.createPost); // Define a route to handle POST requests to /posts
+
+module.exports = router;
