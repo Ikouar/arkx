@@ -1,0 +1,50 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const moment = require('moment');
+
+const app = express();
+app.use(bodyParser.json());
+
+// Logging middleware
+const loggingMiddleware = (req, res, next) => {
+  const { method, url } = req;
+  const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');
+  const logMessage = `[${timestamp}] ${method} ${url}`;
+  
+  console.log(logMessage); // Log to console
+  fs.appendFile('access.log', logMessage + '\n', (err) => {
+    if (err) {
+      console.error('Error writing to log file:', err);
+    }
+  }); // Log to file
+  
+  next();
+};
+
+app.use(loggingMiddleware); // Apply logging middleware to all routes
+
+// Routes
+app.get('/test', (req, res) => {
+  res.send('Testing Logging and Error Handling Middleware');
+});
+
+// Error handling middleware
+const errorHandlingMiddleware = (err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+};
+
+app.use(errorHandlingMiddleware); // Apply error handling middleware
+
+// Testing error handling middleware
+app.get('/error', (req, res, next) => {
+  // Intentional error to test error handling middleware
+  next(new Error('Test error'));
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});

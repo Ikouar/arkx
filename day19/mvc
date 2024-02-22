@@ -1,0 +1,67 @@
+const express = require('express');
+const router = express.Router();
+const fs = require('fs');
+const moment = require('moment');
+
+const app = express();
+
+// Logging middleware
+const loggingMiddleware = (req, res, next) => {
+  const { method, url } = req;
+  const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');
+  const logMessage = `[${timestamp}] ${method} ${url}`;
+  
+  console.log(logMessage); // Log to console
+  fs.appendFile('access.log', logMessage + '\n', (err) => {
+    if (err) {
+      console.error('Error writing to log file:', err);
+    }
+  }); // Log to file
+  
+  next();
+};
+
+// Error handling middleware
+const errorHandlingMiddleware = (err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+};
+
+// Apply logging middleware to router
+router.use(loggingMiddleware);
+
+// Apply error handling middleware to router
+router.use(errorHandlingMiddleware);
+
+router.get('/', (req, res) => {
+    res.send('GET request to the homepage');
+  });
+  
+
+  router.post('/', (req, res) => {
+    const { body } = req;
+    // Assuming the request body contains data to create a new resource
+    // For example, if the client sends JSON data containing a name and email
+    const { name, email } = body;
+  
+    // Here you can perform validation, database operations to store the new resource, etc.
+    // For simplicity, let's just echo back the received data
+    res.json({ name, email });
+  });
+  
+
+app.use('/api', router);
+
+const usersRoutes = require('./routes/users');
+const productsRoutes = require('./routes/products');
+
+// Apply logging middleware to main Express app
+app.use(loggingMiddleware);
+
+// Apply error handling middleware to main Express app
+app.use(errorHandlingMiddleware);
+
+app.use('/users', usersRoutes);
+app.use('/products', productsRoutes);
+
+app.listen(3000, () => {});
