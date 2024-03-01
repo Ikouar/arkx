@@ -1,0 +1,30 @@
+// const { connect } = require('./db');
+// const User = require('./userModel');
+// const Product = require('./productModel');
+// const products = require('./sampleData');
+
+// // Connect to the database
+// connect();
+
+// // You can use User and Product models here as needed, along with the sample products array
+
+const express = require('express');
+const { connect } = require('./db');
+const routes = require('./routes');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Connect to the database
+connect();
+
+// Middleware
+app.use(express.json());
+
+// Routes
+app.use('/api', routes);
+
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});

@@ -1,0 +1,27 @@
+
+const { MongoClient } = require("mongodb");
+
+const url = "mongodb://127.0.0.1:27017";
+
+const client = new MongoClient(url);
+
+client
+  .connect()
+  .then(() => {
+    console.log("Connected to the database");
+    const db = client.db('mydb');
+    const collection = db.collection('users');
+    
+    // Insert document
+    collection.insertOne({ name: "Arkadian", age: "25" })
+      .then((result) => {
+        console.log("User Created Successfully: ", result.insertedId);
+        
+        // Find document
+        collection.findOne({ name: "isko" })
+          .then((user) => console.log("User found: ", user))
+          .catch((error) => console.log("Error finding document: ", error));
+      })
+      .catch((error) => console.log("Error inserting document: ", error));
+  })
+  .catch((error) => console.log("Error connecting to the database: ", error));

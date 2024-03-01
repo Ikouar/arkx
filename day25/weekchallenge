@@ -1,0 +1,140 @@
+const express = require('express');
+const bcrypt = require('bcrypt');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+const { body, validationResult } = require('express-validator');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy; 
+
+const app = express();
+app.use(express.json());
+app.use(cookieParser());
+app.use(session({ secret: 'your-secret-key', resave: true, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Server Variable Structure for storing user credentials
+const users = [];
+
+// Passport.js LocalStrategy for authenticating users with usernames and passwords
+passport.use(new LocalStrategy((username, password, done) => {
+  const user = users.find(u => u.username === username);
+  if (!user) {
+    return done(null, false, { message: 'User not found' });
+  }
+  bcrypt.compare(password, user.password, (err, result) => {
+    if (err) {
+      return done(err);
+    }
+    if (result) {
+      return done(null, user);
+    } else {
+      return done(null, false, { message: 'Incorrect password' });
+    }
+  });
+}));
+
+// Passport.js Google OAuth strategy configuration
+passport.use(new GoogleStrategy({
+  clientID: 'your-client-id',
+  clientSecret: 'your-client-secret',
+  callbackURL: 'http://localhost:3000/auth/google/callback'
+},
+(accessToken, refreshToken, profile, done) => {
+  // Perform user authentication or registration based on Google profile data
+  const user = users.find(u => u.googleId === profile.id);
+  if (user) {
+    return done(null, user);
+  } else {
+    const newUser = {
+      username: profile.displayName,
+      googleId: profile.id
+    };
+    users.push(newUser);
+    return done(null, newUser);
+  }
+}));
+
+// Serialize user data to store in the session
+passport.serializeUser((user, done) => {
+  done(null, user.username);
+});
+
+// Deserialize user data from the session
+passport.deserializeUser((username, done) => {
+  const user = users.find(u => u.username === username);
+  if (!user) {
+    return done(new Error('User not found'));
+  }
+  done(null, user);
+});
+
+// Middleware for data sanitization and validation during registration
+const sanitizeRegistrationInputs = [
+  body('username').trim().escape(),
+  body('password').trim(),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+];
+
+// Registration endpoint to create a new user
+app.post('/register', sanitizeRegistrationInputs, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { username, password } = req.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    users.push({ username, password: hashedPassword });
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Middleware for data sanitization and validation during login
+const sanitizeLoginInputs = [
+  body('username').trim().escape(),
+  body('password').trim(),
+];
+
+// Login endpoint using Passport.js local authentication strategy
+app.post('/login', passport.authenticate('local', { failureRedirect: '/login' }), (req, res) => {
+  res.status(200).json({ message: 'Local authentication successful' });
+});
+
+// Google OAuth authentication route
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile'] }));
+
+// Google OAuth callback route
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
+  res.redirect('/'); // Redirect to homepage after successful authentication
+});
+
+// Protected route that can only be accessed by authenticated users
+app.get('/protected', (req, res) => {
+  if (req.isAuthenticated()) {
+    res.status(200).json({ message: 'Access granted' });
+  } else {
+    res.status(403).json({ message: 'Access denied' });
+  }
+});
+
+// Logout functionality to clear the user session
+app.post('/logout', (req, res) => {
+  req.logout();
+  res.status(200).json({ message: 'Logout successful' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Internal server error' });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

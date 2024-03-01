@@ -1,0 +1,144 @@
+// const mongoose = require('mongoose');
+// mongoose
+//   .connect("mongodb://localhost:27017/mydb")
+//   .then(() => console.log("Connected to database"))
+//   .catch((error) => console.log("Error: ", error));
+//   const userSchema = new mongoose.Schema({
+//     name: {type: String, required: true},
+//     email: {type: String, required: true, unique: true},
+//     age: {type: Number}
+//   });
+//   const User = mongoose.model('User', userSchema);
+//   const newUser = new User({
+//     name: "Arkadian",
+//     email: "admin@arkx.group",
+//     age: 25,
+//   });
+  
+//   newUser
+//     .save()
+//     .then((user) => console.log("User created succesfully: ", user))
+//     .catch((error) => console.log("Error creating user: ", error));
+//     User.find({})
+//   .then((users) => console.log(users))
+//   .catch((error) => console.log("Error fetching users: ", error));
+//   User.findOne({ name: "Arkadian" })
+//   .then((user) => {
+//     if (user) console.log(user);
+//     else console.log("User not found");
+//   })
+//   .catch((error) => console.log("Error fetching users: ", error));
+//   User.findOneAndUpdate(
+//     { email: "admin@arkx.group" },
+//     { $set: { email: "user@arkx.group", age: 20 } }
+//   )
+//     .then((user) => {
+//       if (user) console.log("User updated successfully: ", user);
+//       else console.log("User not found");
+//     })
+//     .catch((error) => console.log("Error fetching users: ", error));
+//     User.findOneAndDelete({ email: "user@arkx.group" })
+//   .then((user) => {
+//     if (user) console.log("User deleted successfully: ", user);
+//     else console.log("User not found");
+//   })
+//   .catch((error) => console.log("Error deleting user: ", error));
+
+
+
+const mongoose = require('mongoose');
+
+mongoose
+.connect("mongodb://localhost:27017/mydb")
+.then(() => console.log("Connected to database"))
+.catch((error) => console.log("Error connecting to database: ", error));
+
+// Define user schema
+const userSchema = new mongoose.Schema({
+name: { type: String, required: true },
+email: { type: String, required: true, unique: true },
+age: { type: Number },
+createdAt: { type: Date, default: Date.now }
+});
+
+// Define User model
+const User = mongoose.model('User', userSchema);
+
+// Create a new user
+const newUser = new User({
+name: "Mike Ross",
+email: "mike.ross@arkx.group",
+age: 30
+});
+
+// Save the new user
+newUser
+.save()
+.then((user) => console.log("User created successfully: ", user))
+.catch((error) => console.log("Error creating user: ", error));
+
+// Function to fetch users with pagination
+const fetchUsers = async (pageNumber, pageSize) => {
+try {
+    const users = await User.find({})
+      .skip((pageNumber - 1) * pageSize)
+    .limit(pageSize);
+    console.log("Users:", users);
+} catch (error) {
+    console.log("Error fetching users: ", error);
+}
+};
+
+// Function to fetch a single user by name
+const findUserByName = async (name) => {
+try {
+    const user = await User.findOne({ name });
+    if (user) console.log("User found by name:", user);
+    else console.log("User not found");
+} catch (error) {
+    console.log("Error fetching user by name: ", error);
+}
+};
+
+// Function to fetch a single user by email
+const findUserByEmail = async (email) => {
+try {
+    const user = await User.findOne({ email });
+    if (user) console.log("User found by email:", user);
+    else console.log("User not found");
+} catch (error) {
+    console.log("Error fetching user by email: ", error);
+}
+};
+
+// Update user email
+const updateUserEmail = async (name, newEmail) => {
+try {
+    const user = await User.findOneAndUpdate(
+    { name },
+    { $set: { email: newEmail } },
+    { new: true }
+    );
+    if (user) console.log("User email updated successfully:", user);
+    else console.log("User not found");
+} catch (error) {
+    console.log("Error updating user email: ", error);
+}
+};
+
+// Delete users created before a certain date
+const deleteUsersBeforeDate = async (date) => {
+try {
+    const result = await User.deleteMany({ createdAt: { $lt: date } });
+    console.log("Number of users deleted:", result.deletedCount);
+} catch (error) {
+    console.log("Error deleting users: ", error);
+}
+};
+
+// Usage examples:
+fetchUsers(1, 10); // Fetch first 10 users
+findUserByName("Mike Ross"); // Find user by name
+findUserByEmail("mike.ross@arkx.group"); // Find user by email
+updateUserEmail("Mike Ross", "mike.ross@example.com"); // Update user email
+deleteUsersBeforeDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)); // Delete users created before one week ago
